@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>LN IPDD Analytics Demo</title>
+
+	<!-- chart js and css -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.css"></script>
+
+	<!-- JQuery -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"> </script>
+
+
+	<!-- Materialize js and css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+
+
+</head>
+<body>
+
+	<!-- Nav Bar -->
+	<nav class="nav-extended">
+	    <div class="nav-wrapper">
+	      <a href="#" class="brand-logo" style="padding: 3vh;">LN IPDD Survey Results</a>
+	    </div>
+	    <div style="padding-top: 3vh;" class="nav-content">
+	      <ul class="tabs tabs-transparent">
+	        <li id='IndividualsTab' class="tab"><a id='IndividualsTabTxt' class="active">View Individuals</a></li>
+	        <li id='QuestionsTab' class="tab"><a id="QuestionsTabTxt">View Questions</a></li>
+	        <li id="CorrelateTab" class="tab"><a id="CorrelateTabTxt">Cross Correlate</a></li>
+	        <li id="ExportTab" class="tab"><a id="ExportTabTxt">Export</a></li>
+
+	      </ul>
+	    </div>
+	</nav>
+
+
+	<!-- Individual Response Analysis Area -->
+	<div id='IndividualsArea' class="center">
+
+		<!-- individual selection dropdown area -->
+		<div class="row">
+			<p> Individual Results </p>
+			<div class="col s3"> </div>
+			<div class="col s6">
+				<div id="dropdownAreaIndividuals">
+					<label for="people">Respondant:</label>
+					<select id="personResponseSelector" class="browser-default" name="people">
+					</select>
+				</div>
+			</div>
+			<div class="col s3"> </div>
+		</div>
+
+		<!-- question selection dropdown area -->
+		<div class="row">
+			<p> Specify Question </p>
+			<div class="col s3"> </div>
+			<div class="col s6">
+				<div id="dropdownAreaQuestions">
+					<label for="question">Question:</label>
+					<select id="questionResponseSelector" class="browser-default" name="question">
+					</select>
+				</div>
+			</div>
+			<div class="col s3"> </div>
+		</div>
+
+		<!-- Users Responses for each question -->
+		<div id="individualsResponsesArea" class="center" >
+
+			<!-- Render each question -->
+			<div id="individualsResponsesQuestionsArea" class="row">
+			</div>
+
+		</div>
+
+	</div>
+
+
+	<!-- Question Response Analysis Area -->
+	<div id='QuestionsArea' class="center displayOff">
+
+
+		<!-- question selection dropdown area -->
+		<div class="row">
+			<p> Specify Question </p>
+			<div class="col s3"> </div>
+			<div class="col s6">
+				<div id="dropdownAreaQuestions">
+					<label for="question">Question:</label>
+					<select id="questionResponseSelectorQTab" class="browser-default" name="question">
+					</select>
+				</div>
+			</div>
+			<div class="col s3"> </div>
+		</div>
+
+		<!-- chart of users responses for each question -->
+		<div id="questionSummaryArea" class="center" >
+
+			<!-- Render each question -->
+			<div id="questionSummaryQuestionsArea" class="row">
+			</div>
+
+		</div>
+
+	</div>
+
+
+	<!-- Cross Analysis Area -->
+	<div id="CrossCorrelateArea" class="center  displayOff">
+
+		<p> See How Users Who Responded To... </p>
+		<div class="row">
+			<div class="col s3"> </div>
+			<div class="col s6">
+				<div id="dropdownAreaQuestions">
+					<label for="questionA">Question:</label>
+					<select id="dropdownAreaCorrelateQuestionsA" class="browser-default" name="questionA">
+					</select>
+				</div>
+			</div>
+			<div class="col s3"> </div>
+		</div>
+
+		<p> Responded To... </p>
+		<div class="row">
+			<div class="col s3"> </div>
+			<div class="col s6">
+				<div id="dropdownAreaQuestions">
+					<label for="questionB">Question:</label>
+					<select id="dropdownAreaCorrelateQuestionsB" class="browser-default" name="questionB">
+					</select>
+				</div>
+			</div>
+			<div class="col s3"> </div>
+		</div>
+
+		<div id="crossCorrelationsListArea">  </div>
+
+	</div>
+
+
+
+
+	<!--materialize js at end of body for optimized loading-->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+</body>
+</html>
+
+<script type="text/javascript">
+
+	//properties =========================
+	let names = []; //list of users
+	let responses = {}; //response info... userID + response for each question
+	let questions = {}; //questions list
+	let possibleAnswers = {}; //possilbe answers to questions
+	let singleSelectQuestions = [1,2,3,4,5,6,7,8,9,10,11,12,13,23,29,31,32] //q35 removed
+	let multiSelectQuestions = [14,21,26,26,27,28,]
+	let pointAllocationQuestions = [15,16,17,18,19,20,22,24,25,30,37];
+	let textInputQuestions = [33,34,36];
+	let filterIndividualResultsByQuestion = false; //filter by question for individuals tab
+	let filterQuestionResultsByQuestion = false; //filter question for questions tab
+	let indivdualQuestionFilter = 0; //which question to grab when filtering
+	let questionSummaryQuestionFilter = 0;
+
+
+	//methods ============================
+
+	$( document ).ready(function(){
+		$(".dropdown-trigger").dropdown();
+
+		populateIndividualsTab();
+
+		populateQuestionTab();
+
+		populateCrossCorrelateTab();
+
+
+
+		populateIndividualsQuestions();//populate questions in individual area
+		populateIndividualsResponses(getSelectedIndividual()); //add individual's responses
+
+	});
+
+
+	function populateIndividualsTab(){
+		//populate user info
+		populateUsers();
+
+		//populate html fields...
+		populateInvidualsDropdown();
+
+		//define questions for display
+		defineQuestions();
+	}
+
+
+	function populateQuestionTab(){
+		//populate questions dropdown
+		populateQuestionsDropDown();
+
+		//define possible answers for display
+		definePossibleAnswers();
+
+		//define responses for display
+		defineResponses();
+	}
+
+	function populateCrossCorrelateTab(){
+		//populate question dropdowns
+		populateCorrelationDropdowns();
+	}
+
+
+	//control flow for tabs
+	$('#IndividualsTab').click(function(){
+		collapseTabs();
+		$('#IndividualsArea').fadeIn();
+		$('#IndividualsTabTxt').addClass('active');
+		populateIndividualsQuestions();//populate individuals questions
+		populateIndividualsResponses(getSelectedIndividual());
+	});
+
+
+	$('#QuestionsTab').click(function(){
+		collapseTabs();
+		$('#QuestionsArea').fadeIn();
+		$('#QuestionsTabTxt').addClass('active');
+		populateQuestionSummaryQuestions();
+		addQuestionSummaryResponses();
+	});
+
+	$('#CorrelateTab').click(function(){
+		collapseTabs();
+		$('#CorrelateTabTxt').addClass('active');
+		$('#CrossCorrelateArea').fadeIn();
+		calculateCrossCorrelation();
+	});
+
+	$('#ExportTab').click(function(){
+		collapseTabs();
+		$('#ExportTabTxt').addClass('active');
+		$('#ExportArea').fadeIn();
+	});
+
+
+
+	//collapse all tabs
+	function collapseTabs(){
+		//set tab headers to grey (inactive)
+		$("#IndividualsTabTxt").removeClass("active");
+		$('#QuestionsTabTxt').removeClass("active");
+		$('#CorrelateTabTxt').removeClass("active");
+		$('#ExportTabTxt').removeClass("active");
+
+		//fade out tabs
+		$('#IndividualsArea').fadeOut();
+		$('#QuestionsArea').fadeOut();
+		$('#CrossCorrelateArea').fadeOut();
+		$('#ExportArea').fadeOut();
+	}
+
+
+	//add question text to individuals response area
+	function populateIndividualsQuestions(){
+
+		let individualQuestionHtml = '';
+
+		for(var key in questions){
+
+			if(!filterIndividualResultsByQuestion || key == getSelectedQuestion('individuals')){
+
+				//info to render
+				let questionNum = key;
+				let questionTxt = questions[key];
+
+				if(questionNum%1>0){ //incudes decimal?
+					questionNum -= questionNum%1;
+					questionNum = parseInt(questionNum) + ' Other';
+				}
+
+				//get possible answers
+				let answers = getPossibleAnswers(key);
+				let answersAreaID = 'individualPossibleAnswers' + key + '';
+
+
+				//check if is point allocation question
+				let pieChartHtml = '';
+				if(isPointAllocation(key)){
+					//add pie chart to display answers
+					// let pieChartId = "individual-pie-chart"+key;
+					pieChartHtml += "<canvas id='individual-pie-chart"+key+"' width='600' height='150' class='side-pad displayOff'></canvas>"
+				}
+
+				//add to html
+				individualQuestionHtml += "<p class='pad-top bold'> Question "+questionNum+" </p>"; //question number
+
+				individualQuestionHtml += "<p class='questionTxt' onclick='viewPossibleAnswers("+answersAreaID+")' > "+'Q: '+" "+questionTxt+" </p>"; //question text
+
+				individualQuestionHtml += "<div id='individualPossibleAnswers"+key+"' class='displayOff questionTxt' onclick='collapsePossibleAnswers("+answersAreaID+")'> Possible Answers: "+answers+" </div>"; //possible answers
+
+
+				individualQuestionHtml += pieChartHtml;
+
+
+				individualQuestionHtml += "<div id='individualResponse"+key+"' class=''> </div>"; //response to question
+			}
+		}
+
+		$('#individualsResponsesQuestionsArea').html(individualQuestionHtml);
+	}
+
+	//add questions to view questions area
+	function populateQuestionSummaryQuestions(){
+		let questionsSummaryQuestionHtml = '';
+
+		for(var key in questions){
+
+			if( isSummableQuestion(key) && (!filterQuestionResultsByQuestion || key == getSelectedQuestion('questions'))){ //decect filtering for specific question
+
+				//info to render
+				let questionNum = key;
+				let questionTxt = questions[key];
+
+				if(questionNum%1>0){ //incudes decimal?
+					questionNum -= questionNum%1;
+					questionNum = parseInt(questionNum) + ' Other';
+				}
+
+				//get possible answers
+				let answers = getPossibleAnswers(key);
+				let answersAreaID = 'questionSummaryPossibleAnswers' + key + '';
+
+				//detect question type and add chart.................
+
+
+				//check if is point allocation question
+				let chartHtml = '';
+				if(isPointAllocation(key) || isSingleSelectQuestion(key) || isMultiSelectQuestion(key)){
+					//add pie chart to display answers
+					// let pieChartId = "individual-pie-chart"+key;
+					chartHtml += "<canvas id='questions-chart"+key+"' width='600' height='150' class='side-pad displayOff'></canvas>"
+				}
+
+				//add to html
+				questionsSummaryQuestionHtml += "<p class='pad-top bold'> Question "+questionNum+" </p>"; //question number
+
+				questionsSummaryQuestionHtml += "<p class='questionTxt' onclick='viewPossibleAnswers("+answersAreaID+")' > "+'Q: '+" "+questionTxt+" </p>"; //question text
+
+				questionsSummaryQuestionHtml += "<div id='questionSummaryPossibleAnswers"+key+"' class='displayOff questionTxt' onclick='collapsePossibleAnswers("+answersAreaID+")'> Possible Answers: "+answers+" </div>"; //possible answers
+
+
+				questionsSummaryQuestionHtml += chartHtml;
+
+
+				questionsSummaryQuestionHtml += "<div id='questionSummaryResponse"+key+"' class=''> </div>"; //response to question
+			}
+		}
+
+		$('#questionSummaryQuestionsArea').html(questionsSummaryQuestionHtml);
+	}
+
+	//on input for cross correlation... collect info
+	$('#dropdownAreaCorrelateQuestionsA').on('input',function(){
+		calculateCrossCorrelation();
+	});
+	$('#dropdownAreaCorrelateQuestionsB').on('input',function(){
+		calculateCrossCorrelation();
+	});
+
+	//calculate cross correlation Results
+	function calculateCrossCorrelation(){
+
+		//get quetsions
+		let questionA = $('#dropdownAreaCorrelateQuestionsA').val();
+		let questionB = $('#dropdownAreaCorrelateQuestionsB').val();
+
+		//get list of responses that include question A
+		let questionARespondants = getRespondantsFiltered(questionA);
+
+		//get possible responses to question A
+		let possibleResponsesToA = possibleAnswers[questionA];
+
+		//get possible responses to question B
+		let possibleResponsesToB = possibleAnswers[questionB];
+
+		//for each possible answer to A, show how those respondants responded to B
+		let crossHtmlArea = '';
+		for(var possibleAnswer in possibleResponsesToA){
+
+			//set area title to current possible answer
+			let crossAreaTitle = "Users who responded " + possibleResponsesToA[possibleAnswer].trim() + " to question " + questionA + ", gave these responses to question " + questionB + '.';
+
+			//make new html Area
+			crossHtmlArea += 	"<p> "+crossAreaTitle+" </p>";
+		}
+
+		//add to html
+		$('#crossCorrelationsListArea').html(crossHtmlArea);
+
+	}
+
+
+	//filter responses for responses that include a specific question
+	function getRespondantsFiltered(questionNum){
+		let respondants = [];
+		for(var response in responses){
+			if(responses[response][parseInt(translateQuestionToResonse(questionNum))].trim() != 'not asked' && responses[response][parseInt(translateQuestionToResonse(questionNum))] !== undefined){
+				respondants.push(response);
+			}
+		}
+		return respondants;
+	}
+
+	//render Pie chart
+	function renderPieChart(area, key, responseArr){
+		if(area == 'individual'){
+
+			var ctx = document.getElementById("individual-pie-chart" + key).getContext('2d');
+			var myChart = new Chart(ctx, {
+			    type: 'pie',
+			    data: {
+			        labels: possibleAnswers[key],
+			        datasets: [{
+			            label: "Points Allocated",
+			            data: responseArr.split(','),
+			            backgroundColor: [
+			                'rgba(245, 66, 66, 0.2)',
+			                'rgba(98, 188, 240, 0.2)',
+			                'rgba(84, 255, 87, 0.2)',
+			                'rgba(255, 247, 89, 0.2)',
+			                'rgba(255, 175, 64, 0.2)',
+			                'rgba(172, 64, 255, 0.2)',
+			                'rgba(28, 52, 189, 0.2)',
+			                'rgba(205, 255, 87, 0.2)',
+			                'rgba(133, 255, 198, 0.2)'
+			            ],
+			            borderColor: [
+			                'rgba(245, 66, 66, 1)',
+			                'rgba(98, 188, 240, 1)',
+			                'rgba(84, 255, 87, 1)',
+			                'rgba(255, 247, 89, 1)',
+			                'rgba(255, 175, 64, 1)',
+			                'rgba(172, 64, 255, 1)',
+			                'rgba(28, 52, 189, 0.2)',
+			                'rgba(205, 255, 87, 0.2)',
+			                'rgba(133, 255, 198, 0.2)'
+			            ],
+			            borderWidth: 1
+			        }]
+			    },
+			    options: {
+			       title: {
+			        display: false,
+			        text: 'Point Allocation Breakdown'
+			      }
+			    }
+			});
+			$('#individual-pie-chart' + key).fadeIn();
+		}
+	}
+
+	//render Pie chart
+	function renderChart(type, area, key){ //..................
+
+		//get type...
+		let chartType;
+		let chartLabel;
+		let chartData;
+		if(type == 'pie'){
+			chartType = 'pie';
+			chartLabel = "Point Allocation Breakdown" ;
+			chartData = getQuestionSummaryData(key);
+		}
+		else {
+			chartType = 'bar';
+			chartLabel = "Selection Proportion Breakdown" ;
+			chartData = getQuestionSummaryData(key);
+		}
+
+
+		if(area == 'questions'){
+
+			var ctx = document.getElementById("questions-chart" + key).getContext('2d');
+			var myChart = new Chart(ctx, {
+			    type: chartType,
+			    data: {
+			        labels: possibleAnswers[key],
+			        datasets: [{
+			            label: chartLabel,
+			            data: chartData,
+			            backgroundColor: [
+			                'rgba(245, 66, 66, 0.2)',
+			                'rgba(98, 188, 240, 0.2)',
+			                'rgba(84, 255, 87, 0.2)',
+			                'rgba(255, 247, 89, 0.2)',
+			                'rgba(255, 175, 64, 0.2)',
+			                'rgba(172, 64, 255, 0.2)',
+			                'rgba(28, 52, 189, 0.2)',
+			                'rgba(205, 255, 87, 0.2)',
+			                'rgba(133, 255, 198, 0.2)'
+			            ],
+			            borderColor: [
+			                'rgba(245, 66, 66, 1)',
+			                'rgba(98, 188, 240, 1)',
+			                'rgba(84, 255, 87, 1)',
+			                'rgba(255, 247, 89, 1)',
+			                'rgba(255, 175, 64, 1)',
+			                'rgba(172, 64, 255, 1)',
+			                'rgba(28, 52, 189, 0.2)',
+			                'rgba(205, 255, 87, 0.2)',
+			                'rgba(133, 255, 198, 0.2)'
+			            ],
+			            borderWidth: 1
+			        }]
+			    },
+			    options: {
+			       title: {
+			        display: false,
+			        text: 'Point Allocation Breakdown'
+			      }
+			    }
+			});
+			$('#questions-chart' + key).fadeIn();
+		}
+	}
+
+
+	//is free text input quetsion?
+	function isTextInputQuestion(question){
+		let returnVal = false;
+		textInputQuestions.forEach(function(tiq){
+			if(tiq == question) {
+				returnVal = true;
+			}
+		});
+		return returnVal;
+	}
+
+
+	//is quetsion for summary area?
+	function isSummableQuestion(question){
+			return (isPointAllocation(question) || isMultiSelectQuestion(question) || isSingleSelectQuestion(question));
+	}
+
+
+
+	//return whether or not given question is a point allocation question
+	function isPointAllocation(question){
+		let returnVal = false;
+		pointAllocationQuestions.forEach(function(poq){
+			if(poq == question) {
+				returnVal = true;
+			}
+		});
+
+		return returnVal;
+	}
+
+	//is single select?
+	function isSingleSelectQuestion(key){
+		let returnVal = false;
+		singleSelectQuestions.forEach(function(poq){
+			if(poq == key) {
+				returnVal = true;
+			}
+
+		})
+
+		return returnVal;
+	}
+
+
+	//is mutli select?
+	function isMultiSelectQuestion(key){
+		let returnVal = false;
+		multiSelectQuestions.forEach(function(poq){
+			if(poq == key) {
+				returnVal = true;
+			}
+
+		})
+
+		return returnVal;
+	}
+
+
+	//get possible answers to a question
+	function getPossibleAnswers(key){
+		if(key in possibleAnswers){
+			return possibleAnswers[key];
+		}
+		return 'Free Text Input';
+	}
+
+	//view possible answers
+	function viewPossibleAnswers(area){
+		$('#'+area.id).fadeIn();
+	}
+
+	//collapse possible answers
+	function collapsePossibleAnswers(area){
+		$('#'+area.id).fadeOut();
+	}
+
+
+	//get id of individual selected in personResponseSelector
+	function getSelectedIndividual(){
+		return $('#personResponseSelector').val();
+	}
+
+	$('#personResponseSelector').on('input',function(){
+		//filter quetsions to only include selected value
+		populateIndividualsQuestions();
+		populateIndividualsResponses(getSelectedIndividual());
+	});
+
+	//get value of question selected in questionResponseSelector
+	function getSelectedQuestion(tab){
+		if(tab == 'individuals')
+			return $('#questionResponseSelector').val();
+		else if (tab == 'questions')
+			return $('#questionResponseSelectorQTab').val();
+	}
+
+	$('#questionResponseSelector').on('input',function(){
+		//filter quetsions to only include selected value
+		if(getSelectedQuestion('individuals') > 0){
+			filterIndividualResultsByQuestion = true;
+			indivdualQuestionFilter = getSelectedQuestion('individuals');
+		}
+		else{
+			filterIndividualResultsByQuestion = false;
+		}
+		populateIndividualsQuestions();
+		populateIndividualsResponses(getSelectedIndividual());
+	});
+
+	$('#questionResponseSelectorQTab').on('input',function(){
+		//filter quetsions to only include selected value
+		if(getSelectedQuestion('questions') > 0){
+			filterQuestionResultsByQuestion = true;
+			questionSummaryQuestionFilter = getSelectedQuestion('questions');
+		}
+		else{
+			filterQuestionResultsByQuestion = false;
+		}
+		populateQuestionSummaryQuestions();
+	});
+
+
+	//populate invdividual response dropdown with all names
+	function populateInvidualsDropdown(){
+
+		let individualsHtml; //add options to this
+
+		let uid = 0;
+		for(var name in names){
+			individualsHtml += "<option value="+uid+"> "+names[name]+" </option>";
+			uid++;
+		}
+
+		$('#personResponseSelector').html(individualsHtml); //update html area
+	}
+
+	function populateQuestionsDropDown(){
+
+		let questionsHtml = "<option value='-1'> View All </option>";
+
+		let optionVal = 0;
+		for(var question in questions){
+			questionsHtml += "<option value="+question+"> "+ 'Q: ' +question+" </option>";
+		}
+
+		$('#questionResponseSelector').html(questionsHtml); //update html area
+		$('#questionResponseSelectorQTab').html(questionsHtml); //update html area
+	}
+
+	function populateCorrelationDropdowns(){
+		let questionsHtml;
+
+		let optionVal = 0;
+		for(var question in questions){
+			questionsHtml += "<option value="+question+"> "+ 'Q: ' +question+" </option>";
+		}
+
+		$('#dropdownAreaCorrelateQuestionsA').html(questionsHtml); //update html area
+		$('#dropdownAreaCorrelateQuestionsB').html(questionsHtml); //update html area
+	}
+
+	function populateIndividualsResponses(selectedIndividual){
+		let responsesToAdd = responses[selectedIndividual];
+
+		let responseIndex = 0;
+		for(key in questions){
+
+			if(!filterIndividualResultsByQuestion || key == getSelectedQuestion('individuals')){
+
+
+				//get appropriate response
+				let questionResponse = responsesToAdd[responseIndex];
+
+
+				if(isPointAllocation(key) && responsesToAdd[responseIndex] != 'not asked'){
+					renderPieChart('individual', key, questionResponse);
+				}
+				else{
+					$('#individualResponse' + key).html( "<p> " +'A: ' + questionResponse + "</p>");
+				}
+
+			}
+
+			responseIndex++;
+		}
+
+	}
+
+	//add qustion summaries
+	function addQuestionSummaryResponses(){
+
+		for(key in questions){
+
+			if( isSummableQuestion(key) && (!filterQuestionResultsByQuestion || key == getSelectedQuestion('questions'))){
+
+				if(isPointAllocation(key)){
+					renderChart('pie','questions', key);
+				}
+				else if(isSingleSelectQuestion(key)){
+					renderChart('bar-totals','questions', key);
+				}
+				else if(isMultiSelectQuestion(key)){
+					renderChart('bar-singles','questions', key);
+				}
+
+
+			}
+
+		}
+
+	}
+
+
+	//get array respresenting proportional breakdown of responses for given question
+	function getQuestionSummaryData(key){
+
+		if(isSingleSelectQuestion(key)){
+
+			let responseTotals = newZeroArr(possibleAnswers[key].length);
+
+			for(var response in responses){
+				if(responses[response][translateQuestionToResonse(parseInt(key))] != 'not asked' && key != 35){
+					//get index to add to
+					let index = getIndexOfAnswer(responses[response][translateQuestionToResonse(parseInt(key))], key, response);``
+
+
+					responseTotals[index] = responseTotals[index] + 1;
+				}
+			}
+
+			return responseTotals;
+		}
+
+		else if(isMultiSelectQuestion(key)){
+
+			let responseTotals = newZeroArr(possibleAnswers[key].length);
+
+
+			for(var response in responses){
+				if(responses[response][translateQuestionToResonse(parseInt(key))] != 'not asked'){
+					//get index to add to
+					let responsesArr = responses[response][translateQuestionToResonse(parseInt(key))].split(',');
+					for(var selection in responsesArr){
+						let index = getIndexOfAnswer(responsesArr[selection], key, response);
+						responseTotals[index] = responseTotals[index] + 1;
+					}
+				}
+
+			}
+
+			return responseTotals;
+		}
+
+		else if(isPointAllocation(key)){
+
+			let responseTotals = newZeroArr(possibleAnswers[key].length);
+			let totalPoints = 0;
+
+			for(var response in responses){
+
+				if(responses[response][translateQuestionToResonse(parseInt(key))] != 'not asked'){
+					//get index to add to
+					let responsesArr = responses[response][translateQuestionToResonse(parseInt(key))].split(',');
+					for(var selection in responsesArr){
+						if(responsesArr[selection] > 0){
+							responseTotals[selection] = parseInt(responseTotals[selection]) + parseInt(responsesArr[selection]);
+							totalPoints += parseInt(responsesArr[selection]);
+						}
+					}
+				}
+			}
+
+
+			//divide all by total points and multiply by 100
+			for(var total in responseTotals){
+				responseTotals[total] = ((responseTotals[total]/totalPoints)*100).toPrecision(2);
+			}
+
+
+			return responseTotals;
+		}
+
+	}
+
+	//return array of zeros of specified length
+	function newZeroArr(len){
+		let arr = [];
+		let i = 0;
+		while(i<len){
+			arr[i] = 0;
+			i++;
+		}
+		return arr;
+	}
+
+
+	//get index in possible answers that user answer corresponds to
+	function getIndexOfAnswer(answer, key, response){
+		let i = 0;
+		if(answer.trim() == 'not asked') return -1;
+		for(var possibleAnswer in possibleAnswers[key]){
+
+			if(answer.trim().toLowerCase() == possibleAnswers[key][possibleAnswer].trim().toLowerCase()) return i;
+			else if(answer.trim().toLowerCase().includes(possibleAnswers[key][possibleAnswer].trim().toLowerCase())) return i;
+
+			i++;
+
+		}
+		//console.log('not found', answer, possibleAnswers[key], key)
+		return -1;
+	}
+
+	//define questions
+	function defineQuestions(){
+		questions[1] = 'What country / region does your company operate in?';
+		questions[2] = 'Where are you physically based?';
+		questions[3] = 'What type of organization do you work in?'
+		questions[4] = 'How familiar are you with bulk patent data?';
+		questions[5] = 'What industry is your company in?';
+		questions[6] = 'What do you use this data for?';
+		questions[7] = 'What department do you work in?';
+		questions[8] = 'What do you use this data for?';
+		questions[9] = 'How would you classify your job?';
+		questions[10] = 'What do you use this data for?';
+		questions[11] = 'How would you classify your job?';
+		questions[12] = 'What do you use this data for?';
+		questions[13] = 'How would you classify your job?';
+		questions[14] = 'Which of the following patent databases are you familiar with  (e.g. prior/current user, have seen product demos, know of reputation)?';
+		questions[14.5] = 'Specify other patent databases you are familiar with';
+		questions[15] = 'When Acquiring a patent databse how important are the following data base criteria, please allocate a 100 points.';
+		questions[15.5] = 'Specify other important aspects when acquiring a patent database';
+		questions[16] = 'Within accuracy of underlying data, how important are the following criteria to you? Please allocate 100 points';
+		questions[16.5] = 'Specify other important criteria within accuracy of underlying data ';
+		questions[17] = 'Within additional content beyond patent databases, how important are the following to you? Please allocate 100 points';
+		questions[17.5] = 'Specify other important content';
+		questions[18] = 'Within ease of data delivery, how important are the following criteria to you? Please allocate 100 points';
+		questions[18.5] = 'Specify other important criteria within ease of data delivery';
+		questions[19] = 'Within pricing & T&C how important are the following criteria to you? Please allocate 100 points';
+		questions[20] = 'Why do you prefer to  buy a patent (database) bulk data vs subscribing to a search and analytics tools (e.g. Total Patent One, Derwent Innovation, Orbit Intelligence, WIPS etc.). Please choose all those which apply';
+		questions[21] = 'What are your use cases for the patent (databases) bulk/raw data? ';
+		questions[22] = 'For your search use case, what do you search for?';
+		questions[23] =  'For your search use case, do you combine patent data with other data? If yes what other data do you use it with?';
+		questions[23.5] = 'What other data do you combine patent data with?';
+		questions[24] = 'When Analyzing patent databases, what do you analyze for, please allocate 100 points';
+		questions[24.5] = 'Specify other items analyzed for';
+		questions[25] = 'For your analytics use case, do you combine patent data with any other patent data, if yes which ones?';
+		questions[26] = 'What sources of data do you use for collecting your patent data';
+		questions[27] = 'What is the reason for using more then one source of data ?';
+		questions[28] = 'What use cases does the patent data enable in your solution?';
+		questions[29] = 'Do you combine patent data with any other data (e.g. litigation, news, business etc.)? If yes, which data?';
+		questions[29.5] = 'Specify what other data you combine it with';
+		questions[30] = 'Do you further process the patent data before using in your solution? Please select all that you do.';
+		questions[31] = 'Do you use LexisNexis IPDD today?';
+		questions[32] = 'How  familiar are you with IPDD?';
+		questions[33] = 'Why did  you purchase LexisNexis IPDD originally?';
+		questions[34] = 'Why did you stop using LexisNexis IPDD?';
+		questions[35] = 'How likely are you to keep using LexiNexis IPDD?';
+		questions[36] = 'Why did you decide not to buy LexisNexis IPDD?';
+		questions[37] = 'Which improvements would make you more likely to buy LexisNexis IPDD. Allocate 100 points ?';
+
+
+	}
+
+
+	function definePossibleAnswers(){
+		possibleAnswers[1] = [
+			'Global',
+			'Global (US focus)',
+			'Global (Asia focus)',
+			'Global (Europe focus)',
+			'United States',
+			'Asia (multiple countries)',
+			'China',
+			'Japan',
+			'Korea',
+			'India',
+			'Other Asia',
+			'Europe (multiple countries)',
+			'United Kingdom',
+			'Germany',
+			'France',
+			'Other Europe',
+			'Other'
+		]
+
+		possibleAnswers[2] = [
+			"United States", "China", "India", "Japan","Korea", "Other Asia", "United Kingdom", "Germany", "France", "Other Europe", "Other"
+		]
+
+		possibleAnswers[3] = [
+			"Corporation	", " Information Vendor	", " Law firm	", " Government / Academic 	", " Other	"
+		]
+
+		possibleAnswers[4] = [
+			"Data consumer / processor	", " Influencer in decision making 	", " Decision maker but not user	", " Decision maker and user	", " Have heard but not used / no idea 	"
+		]
+
+		possibleAnswers[5] = [
+			"Aerospace	", " Agriculture	", " Automobile	", " Chemical (ex. pharmaceutical)	", " Computer / software	", " Construction	", " Consultancy & Services 	", " Defense	", " Education	", " Energy	", " Entertainment	", " Financial services	", " Food	", " Health care	", " Hospitality	", " IT	", " Manufacturing	", " Media	", " Telecommunications	", " Transport	", " Other	", "	", " Influencer in decision making 	", " Decision maker but not user	", " Decision maker and user	", " Have heard but not used / no idea 	"
+		]
+
+		possibleAnswers[6] = [
+			"Search	", " Analytics	", " Both	", " Other	"
+		]
+
+		possibleAnswers[7] = [
+			"Legal	", " IP	", " R&D	", " Purchase	", " Software Development	", " Business Manager / Strategy	", " Other	"
+		]
+
+		possibleAnswers[8] = [
+			"Prosecution	", " Litigation	", " Both	", " Other	"
+		]
+
+		possibleAnswers[9] = [
+			"Lawyer	", " Paralegal	", " Patent Specialist	", " Manager	", " Purchase	", " Librarian	", " Other	"
+		]
+
+		possibleAnswers[10] = [
+			"Search	", " Analytics	", " Both	", " Other	"
+		]
+
+		possibleAnswers[11] = [
+			"Legal	", " IP	", " R&D	", " Purchase	", " Software Development	", " Examiner	", " Other	"
+		]
+		possibleAnswers[12] = [
+			"Search	", " Analytics	", " Both	", " Other	"
+		]
+		possibleAnswers[13] = [
+			"Product Manager", "Owner / CEO	 " ," R&D	", " Purchase	", " Software Development	", " Other	"
+		]
+		possibleAnswers[14] = [
+			"Clarivate 	", " Questel 	", " LexisNexis / IPDD	", " IFI Claims ", " Lighthouse IP	", "Google Patents", " European Patent Office ", " USPTO	", " Others	"
+		]
+		possibleAnswers[15] = [
+			"Coverage / Quality of the  underlying data	", " Additional content beyond patent databases	", " Pricing and T&C	", " Ease of data delivery	", " Other 	"
+		]
+		possibleAnswers[16] = [
+			"Breadth of data (e.g. # of patent offices covered)	", " Depth of data (e.g. # of patent offices for which provider has full text documents)	", " Data cleanliness (e.g accurate ultimate owner identified,  legal status etc.)	", " Data update frequency	", " Translation quality	", " Additional information added (e.g. manual sumaries)	", " Other	"
+		]
+		possibleAnswers[17] = [
+			"Scientific journals	", " Other scientific databases (e.g. Chemicals, Bio Sequence)	", " Industry codes and standards	", " Litigation data (e.g. which patents have been / are subject to litigation)	", " Citation and Office action data	", " Licencing & Royalty	", " Financial (e.g. company revenues, R&D spend)	", " Pair data 	", " Other	"
+		]
+		possibleAnswers[18] = [
+			"Stable and robust API	", " Onsite server for data delivery	", " Flexibility in data purchase	", " Search Strings 	", " Clear and detailed documentation	", " timliness of data delivery	", " Speed of download	", " Customer support	", " Connectors and linkages between data 	", " Other	"
+		]
+		possibleAnswers[19] = [
+			"Relative pricing vs other providers	", " Ability to re-sell patent data to other buyers	", " Ability to keep data after expiry of contract	", " Year on year price hike	", " Pricing by data bundles (e.g. Litigation data, Translations, Non Patent litreature etc.	", " Reputation	", " Simple pricing structure 	", " Other	"
+		]
+		possibleAnswers[20] = [
+			"Confidentiality	", " Combine patent data with other proprietary  information	", " Use in internal workflow solution (e.g. SciVal, WoS, Scopus etc.) 	", " Customized search 	", " Customized analysis	", " Cost of search and analytics tools	", " Limitation of search and analytical tools	"
+		]
+		possibleAnswers[21] = [
+			"Search	", " Analytics	", "Solutions", "Consulting", " Other 	"
+		]
+		possibleAnswers[22] = [
+			"Prior art search	", " Freedom to operate	", " Invalidity search	", " Competitive Intelligence	", " Patent Scouting	", " Others	"
+		]
+		possibleAnswers[23] = [
+			"yes	", "no"
+		]
+		possibleAnswers[24] = [
+			"Technology Landscaping	", " Competitive Landscaping	", " Innovation scouting	", " Partner identification	", " Competitive analysis	", " white space identification	", " M&A / Licensing identification	", " Innovation scouting	", " Prosecution analytics	", " Other 	"
+		]
+		possibleAnswers[25] = [
+			'Free Text Input'
+		]
+		possibleAnswers[26] = [
+			"Clarivate (Derwent /DWPI)	", " Questel (Fampat/ Data Scope)	", " LexisNexis / IPDD	", " IFI Claims  (Claims Direct)	", " Lighthouse IP	", " Google Patents	", " European Patent Office (espacenet)	", " USPTO	", " Others	"
+		]
+		possibleAnswers[27] = [
+			"Completeness of data (e.g. maximum number of patent offices)	", " Accuracy of data (i.e. different offices have different quality of data)	", " Cost (i.e. different providers have different costs )	", " I do my own data cleansing	", " Other	"
+		]
+		possibleAnswers[28] = [
+			"Prior art search	", " Freedom to Operate	", " Invalidity search	", " Technology Landscaping	", " Competitive Landscaping	", " Innovation scouting	", " Partner identification	", " Competitive analysis	", " white space identification	", " M&A / Licensing identification	", " Innovation scouting	", " Prosecution analytics	", " Other 	"
+		]
+		possibleAnswers[29] = [
+			'Free Text Input'
+		]
+		possibleAnswers[30] = [
+			"Name Normalization	", " Legal status clean up	", " Ownership data refinement	", " Expiry date calculation	", " Connector to non patent litreature	", " Add Litigation data	", " Add news and business data	", " Other 	"
+		]
+		possibleAnswers[31] = [
+			"yes	", "no	"
+		]
+		possibleAnswers[32] = [
+			"We currently use this product	", " We used to use this product in the past but currently do not use it	", " Previously I have seen a product demo / received sample data / received an offer 	", " Know of reputation	"
+		]
+		possibleAnswers[33] = [
+			'Free Text Input'
+		]
+		possibleAnswers[34] = [
+			'Free Text Input'
+		]
+		possibleAnswers[35] = [
+			[1,2,3,4,5,6,7,8,9,10]
+		]
+		possibleAnswers[36] = [
+			'Free Text Input'
+		]
+		possibleAnswers[37] = [
+			"Improve quality of content (e.g. full text, normalization, legal status, company hirarchy etc.)	", " Data from more patent offices (e.g. Thailand, South Africa, Turkey, Israel etc.)	", " Improve content delivery (e.g. Better API, on-pre… speed to data download, speed to data updation)	", " Improve product support (e.g. documentation, customer support etc.)	", " Improve pricing vs competitors 	", " Increase content (e.g. Chemical, litigation, News, Business etc.)	"
+		]
+		possibleAnswers[38] = [
+			'Free Text Input'
+		]
+
+
+	}
+
+
+	//transalte question index to response index
+	function translateQuestionToResonse(key){
+		//.............................
+		if(key <= 14) return key - 1;
+		else if(key == 14.5) return 14;
+		else if(key == 15) return 15;
+		else if(key == 15.5) return 16;
+		else if(key == 16) return 17;
+		else if(key == 16.5) return 18;
+		else if(key == 17) return 19;
+		else if(key == 17.5) return 20;
+		else if(key == 18) return 21;
+		else if(key == 18.5) return 22;
+		else if(key == 19) return 23;
+		else if(key == 20) return 24;
+		else if(key == 21) return 25;
+		else if(key == 22) return 26;
+		else if(key == 23) return 27;
+		else if(key == 23.5) return 28;
+		else if(key == 24) return 29;
+		else if(key == 24.5) return 30;
+		else return key + 6;
+
+	}
+
+	//define responses
+	function defineResponses(){
+
+		responses[0] = [
+			"Japan",
+			"United States",
+			"Information Vendor",
+			"Data consumer / processor",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked",
+			"Analytics",
+			"Product Manager",
+			"Questel (Fampat/ Data Scope),LexisNexis / IPDD,Lighthouse IP,Google Patents,USPTO",
+			"not asked",
+			"50,40,,10,",
+			"not asked",
+			"25,25,,5,40,5,",
+			"not asked",
+			",,10,,,,90,,",
+			"not asked",
+			"not asked",
+			"not asked",
+			"50,30,,,,10,10,",
+			"not asked",
+			"Search,Analytics",
+			"Competitive Intelligence,Patent Scouting",
+			"no",
+			"not asked",
+			",,80,,020,,,,",
+			"not asked",
+			"no",
+			"LexisNexis / IPDD,Google Patents,USPTO",
+			"Completeness,Accuracy",
+			"Technology Landscaping,Competitive Landscaping,Innovation Scouting",
+			"no",
+			"not asked",
+			"Ownership data refinement,Expiry date calculation,Add Litigation data,Add news and business data",
+			"yes",
+			"current",
+			"To complete a litigation dataset",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked"
+		]
+		responses[1] = [
+			"United States",
+			"United States",
+			"Information Vendor",
+			"Decision maker but not user",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked",
+			"Other: Legal Process Decisions",
+			"Legal",
+			"not asked",
+			"not asked",
+			"Clarivate (Derwent /DWPI),Questel (Fampat/ Data Scope),LexisNexis / IPDD,IFI Claims  (Claims Direct),Lighthouse IP,Google Patents,European Patent Office (espacenet),USPTO",
+			"not asked",
+			"50,50,,,,,",
+			"not asked",
+			"50,50,,,,,",
+			"not asked",
+			",,,50,,50,,,",
+			"not asked",
+			"40,,,,10,,,,50,",
+			"not asked",
+			"not asked",
+			"Customized Search",
+			"Search,Analytics",
+			"not asked",
+			"Search,Analytics",
+			"Freedom to operate,Invalidity search",
+			"yes",
+			"Previous IP law",
+			",,40,,20,,,40,",
+			"not asked",
+			"no",
+			"USPTO",
+			"I do my own data cleansing",
+			"Invalidity search,M&A Licensing identification",
+			"no",
+			"not asked",
+			"Legal Status Clean Up,Ownership data refinement,Expiry date calculation,Connector to non patent litreature",
+			"no",
+			"past",
+			"not asked",
+			"Insufficient for custom dataset needs",
+			"not asked",
+			"not asked",
+			"not asked"
+		];
+
+		responses[2] = [
+			"China",
+			"China",
+			"Information Vendor",
+			"Decision maker and user",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked",
+			"Both",
+			"R&D",
+			"LexisNexis / IPDD,European Patent Office (espacenet),USPTO",
+			"not asked",
+			"40,20,20,20,",
+			"not asked",
+			"20,20,,,50,10,",
+			"not asked",
+			"20,,,30,,20,,30,",
+			"not asked",
+			"30,,,,30,,,,40,",
+			"not asked",
+			"30,,,,40,30,,",
+			"not asked",
+			"Search,Analytics,Solutions",
+			"Prior art search,Competitive Intelligence,Patent Scouting",
+			"no",
+			"not asked",
+			"10,10,50,,10,,15,5,",
+			"not asked",
+			"no",
+			"LexisNexis / IPDD,European Patent Office (espacenet),USPTO",
+			"Completeness,Accuracy",
+			"Invalidity search,Technology Landscaping,Competitive Landscaping,Innovation Scouting",
+			"no",
+			"not asked",
+			"Legal Status Clean Up,Ownership data refinement,Add news and business data",
+			"yes",
+			"current",
+			"Legal IP data necessary for client product",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked"
+		];
+
+		responses[3] = [
+			"United Kingdom	", " United Kingdom	", " Information Vendor	", " Data consumer / processor	", " not asked	", " not asked	", " not asked	", " Litigation	", " Lawyer	", " not asked	", " not asked	", " not asked	", " not asked	", " Clarivate (Derwent /DWPI),Questel (Fampat/ Data S…Patents,European Patent Office (espacenet),USPTO	", " not asked	", " 40,50,,10,	", " not asked	", " 10,80,10,,,,	", " not asked	", " ,,,,80,20,,,	", " not asked	", " not asked	", " not asked	", " 40,20,,,40,,,	", " Customized Search,Customized Analysis	", " Analytics,Solutions	", " not asked	", " yes	", " IP Case Outcomes	", " 10,,,30,,10,,50,	", " not asked	", " yes	", " Previous IP Cases	", " LexisNexis / IPDD,European Patent Office (espacenet)	", " Completeness,Accuracy	", " Freedom to operate,Technology Landscaping,Competitive Landscaping,Innovation Scouting	", " yes	", " Custom analytics sources	", " Ownership data refinement,Connector to non patent litreature,Add Litigation data	", " yes	", " past	", " Specific IP case info	", " not asked	", " not asked	", " not asked	", " not asked	"
+		];
+
+		responses[4] = [
+			"United Kingdom	", " United Kingdom	", " Information Vendor	", " Data consumer / processor	", " not asked	", " not asked	", " not asked	", " Litigation	", " Paralegal	", " not asked	", " not asked	", " not asked	", " not asked	", " Questel (Fampat/ Data Scope),IFI Claims  (Claims Direct),Google Patents	", " not asked	", " 20,,20,60,	", " not asked	", " 40,40,,,,20,	", " not asked	", " ,,,,70,15,,15,	", " not asked	", " 15,,,,25,20,,25,15,	", " not asked	", " 10,,20,,20,40,10,	", " Use in internal workflow solution,Customized Analysis	", " Search,Consulting	", " Freedom to operate,Competitive Intelligence	", " yes	", " Recent IP News	", " not asked	", " not asked	", " no	", " Clarivate (Derwent /DWPI),LexisNexis / IPDD	", " Completeness	", " Invalidity search,Competitive Landscaping	", " no	", " not asked	", " Legal Status Clean Up	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	"
+		];
+
+		responses[5] = [
+			"Japan	", " Japan	", " Information Vendor	", " Data consumer / processor	", " not asked	", " not asked	", " not asked	", " Prosecution	", " Paralegal	", " not asked	", " not asked	", " not asked	", " not asked	", " LexisNexis / IPDD,IFI Claims  (Claims Direct),Goo…Patents,European Patent Office (espacenet),USPTO	", " not asked	", " 20,20,10,50,	", " not asked	", " ,20,40,40,,,	", " not asked	", " ,20,,20,,,60,,	", " not asked	", " 30,,,,60,10,,,,	", " not asked	", " 10,,,,30,60,,	", " Combine patent data with other proprietary inform…n internal workflow solution,Customized Analysis	", " Search,Consulting	", " Prior art search,Freedom to operate	", " no	", " not asked	", " not asked	", " not asked	", " no	", " Clarivate (Derwent /DWPI),LexisNexis / IPDD	", " Accuracy	", " Freedom to operate,Technology Landscaping,Competitive Landscaping	", " no	", " not asked	", " Name Normalization,Legal Status Clean Up,Connector to non patent litreature	", " yes	", " current	", " Test against previously used data	", " not asked	", " not asked	", " not asked	", " not asked	"
+		];
+
+		responses[6] = [
+			"United States	", " Korea	", " Information Vendor	", " Data consumer / processor	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Analytics	", " Software Development	", " not asked	", " not asked	", " LexisNexis / IPDD,Google Patents,USPTO	", " not asked	", " 25,25,50,,	", " not asked	", " 30,50,20,,,,	", " not asked	", " ,,,,,,,100,	", " not asked	", " 90,10,,,,,,,,	", " not asked	", " not asked	", " Customized Search,Customized Analysis	", " Analytics	", " not asked	", " no	", " not asked	", " 70,,,,30,,,,	", " not asked	", " no	", " LexisNexis / IPDD,Google Patents	", " Completeness,Accuracy	", " Freedom to operate,Competitive Landscaping,Partner Identification	", " no	", " not asked	", " Name Normalization,Connector to non patent litreature	", " yes	", " past	", " Cross reference for incomplete sections	", " not asked	", " not asked	", " not asked	", " not asked	"
+		];
+
+		responses[7] = [
+			"India	", " India	", " Information Vendor	", " Influencer in decision making 	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Search	", " Owner / CEO	", " Clarivate (Derwent /DWPI),Questel (Fampat/ Data S…oogle Patents,European Patent Office (espacenet)	", " not asked	", " 2,3,5,90,	", " not asked	", " 20,20,060,,,,	", " not asked	", " 10,,,,10,,080,,	", " not asked	", " ,,,50,10,,20,10,10,	", " not asked	", " ,,,,,90,10,	", " not asked	", " Search	", " Prior art search,Freedom to operate,Invalidity search,Competitive Intelligence,Patent Scouting	", " no	", " not asked	", " not asked	", " not asked	", " no	", " LexisNexis / IPDD,Google Patents,USPTO	", " I do my own data cleansing	", " Technology Landscaping,Competitive Landscaping,Partner Identification,White space Identification	", " no	", " not asked	", " Name Normalization,Ownership data refinement	", " yes	", " current	", " Custom Analytics	", " not asked	", " not asked	", " not asked	", " not asked	"
+		];
+
+		responses[8] = [
+		"Global	", " United States	", " Information Vendor	", " Influencer in decision making 	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Both	", " Legal	", " not asked	", " not asked	", " Clarivate (Derwent /DWPI),LexisNexis / IPDD,IFI Claims  (Claims Direct),Google Patents	", " not asked	", " ,,100,,	", " not asked	", " not asked	", " not asked	", " ,,,,,80,,20,	", " not asked	", " 30,,,,,10,,60,,	", " not asked	", " not asked	", " Combine patent data with other proprietary information,Customized Analysis	", " Search,Consulting	", " Freedom to operate,Invalidity search	", " no	", " not asked	", " not asked	", " not asked	", " no	", " Clarivate (Derwent /DWPI),Questel (Fampat/ Data Scope),IFI Claims  (Claims Direct)	", " Accuracy,Cost	", " prior art search,Invalidity search	", " no	", " not asked	", " Legal Status Clean Up,Ownership data refinement,Connector to non patent litreature	", " yes	", " seen	", " Test against our dataset	", " not asked	", " not asked	", " not asked	", " not asked	"
+		];
+
+		responses[9] = [
+			"Global (Asia focus)	", " China	", " Information Vendor	", " Data consumer / processor	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Analytics	", " Product Manager	", " Questel (Fampat/ Data Scope),LexisNexis / IPDD,IFI Claims  (Claims Direct),Google Patents	", " not asked	", " 100,,,,	", " not asked	", " 80,10,10,,,,	", " not asked	", " 40,,,,,60,,,	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Analytics	", " not asked	", " no	", " not asked	", " ,,90,,,10,,,	", " not asked	", " no	", " Clarivate (Derwent /DWPI),Questel (Fampat/ Data Scope),LexisNexis / IPDD	", " Completeness	", " Freedom to operate,Technology Landscaping,Competitive Landscaping	", " yes	", " Private Corp Data	", " Legal Status Clean Up,Expiry date calculation,Connector to non patent litreature	", " yes	", " past	", " View competitor status	", " not asked	", " not asked	", " not asked	", " not asked	"
+		];
+
+	}
+
+
+	//populate user info
+	function populateUsers(){
+
+		names = [
+		"Marco Guidi",  
+		"Santina Elton",  
+		"Meridith Arwood",  
+		"Rebbeca Larrison",  
+		"Tyler Hunsberger",  
+		"Dian Stainback",
+		"Karlyn Dickison",  
+		"Sheri Westfall",  
+		"Gisela Pressey",  
+		"Candy Fino",  
+		"Rayna Parsley",  
+		"Shawnee Haworth",  
+		"Lachelle Kump",  
+		"Lizabeth Sarris",  
+		"Phil Viverette",  
+		"Deneen Hartzog",  
+		"Terrell Flom",  
+		"Felipa Reilley",  
+		"Janna Popovic",  
+		"Tiesha Primavera",  
+		"Marilyn Filer",  
+		"Tasha Crosier",  
+		"Eleonor Woolfolk",  
+		"Eula Cathcart",  
+		"Era Truesdell",  
+		"Maryjane Ruch",  
+		"Ileana Lamphear",  
+		"Lynda Pietila", 
+		"Ethyl Holmberg",  
+		"Erica Zurita",  
+		"Parker Vierling",  
+		"Leo Mcclaran",  
+		"Desiree Machuca",  
+		"Andy Valverde",  
+		"Carleen Wasmund",  
+		"Loise Shear",  
+		"Amiee Billie",  
+		"Keila Shill",  
+		"Magan Brewster",  
+		"Jone Cioffi",  
+		"Ashlyn Krause",  
+		"Elroy Bunge",  
+		"Lurline Labriola",  
+		"Frederic Sartor",  
+		"Willia Tillotson",  
+		"Yer Maldonado",  
+		"Luana Delrio ",
+		"Lida Trentham",  
+		"Jean Tyndall",  
+		"Bo Merz"  
+		]
+
+
+	}
+
+
+</script>
+
+<style type="text/css">
+
+
+	p {
+		font-weight: 100;
+		font-size: 2em;
+		padding-left: 4vw;
+		padding-right: 4vw;
+	}
+
+	.pad-top{
+		padding-top:4vh;
+	}
+
+	.pad-top-sm{
+		padding-top:2vh;
+	}
+
+	.side-pad{
+		padding-left: 5vw;
+		padding-right: 5vw;
+	}
+
+	.bold{
+		font-weight: 450;
+		font-size: 2.2em;
+	}
+
+	.questionTxt{
+		color: black;
+	}
+	.questionTxt:hover{
+		color: dodgerblue;
+	}
+
+	.displayOff{
+		display: none;
+	}
+
+</style>
