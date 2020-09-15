@@ -14,11 +14,8 @@
 	<!-- Materialize js and css -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
 
-    <!-- icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
-
-
+  <!-- icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
 </head>
 <body>
@@ -33,7 +30,7 @@
 	        <li id='IndividualsTab' class="tab"><a id='IndividualsTabTxt' class="active">View Individuals</a></li>
 	        <li id='QuestionsTab' class="tab"><a id="QuestionsTabTxt">View Questions</a></li>
 	        <li id="CorrelateTab" class="tab"><a id="CorrelateTabTxt">Cross Correlate</a></li>
-	        <li id="ExportTab" class="tab"><a id="ExportTabTxt">Export</a></li>
+	        <!-- <li id="ExportTab" class="tab"><a id="ExportTabTxt">Export</a></li> -->
 
 	      </ul>
 	    </div>
@@ -338,8 +335,6 @@
 				let answers = getPossibleAnswers(key);
 				let answersAreaID = 'questionSummaryPossibleAnswers' + key + '';
 
-				//detect question type and add chart.................
-
 
 				//check if is point allocation question
 				let chartHtml = '';
@@ -382,6 +377,7 @@
 		let questionA = $('#dropdownAreaCorrelateQuestionsA').val();
 		let questionB = $('#dropdownAreaCorrelateQuestionsB').val();
 
+
 		//get list of responses that include question A
 		let questionARespondants = getRespondantsFiltered(questionA);
 
@@ -393,17 +389,33 @@
 
 		//for each possible answer to A, show how those respondants responded to B
 		let crossHtmlArea = '';
+		$('#crossCorrelationsListArea').html('');
 		for(var possibleAnswer in possibleResponsesToA){
 
 			//set area title to current possible answer
 			let crossAreaTitle = "Users who responded " + possibleResponsesToA[possibleAnswer].trim() + " to question " + questionA + ", gave these responses to question " + questionB + '.';
 
+			let chartID = "cross-chart"+questionA+"-"+questionB+"-"+possibleAnswer;
+			let chartTxtId = chartID + 'Txt';
+
 			//make new html Area
-			crossHtmlArea += 	"<p> "+crossAreaTitle+" </p>";
+			crossHtmlArea += 	"<p id="+chartTxtId+" class='displayOff' > "+crossAreaTitle+" </p>";
+
+			//detect question type and add chart.................
+			crossHtmlArea += "<canvas id="+chartID+" width='600' height='150' class='side-pad displayOff'></canvas>";
+
+			//add to html
+			$('#crossCorrelationsListArea').append(crossHtmlArea);
+
+			//render charts
+			renderChartCrossResults('bar', 'cross', questionA, questionB, possibleAnswer, chartID);
 		}
 
-		//add to html
-		$('#crossCorrelationsListArea').html(crossHtmlArea);
+
+
+
+
+
 
 	}
 
@@ -467,7 +479,7 @@
 		}
 	}
 
-	//render Pie chart
+	//render chart of input type
 	function renderChart(type, area, key){ //..................
 
 		//get type...
@@ -529,6 +541,75 @@
 			    }
 			});
 			$('#questions-chart' + key).fadeIn();
+		}
+	}
+
+
+
+	//render chart of input type for cross analysis
+	function renderChartCrossResults(type, area, filterKey, key, filterResult, id){
+
+		//get type...
+		let chartType;
+		let chartLabel;
+		let chartData;
+		if(type == 'pie'){
+			chartType = 'pie';
+			chartLabel = "Point Allocation Breakdown" ;
+			chartData = getQuestionSummaryDataCross(key, filterKey, filterResult, id);
+			if(chartData == -1) return;
+		}
+		else {
+			chartType = 'bar';
+			chartLabel = "Selection Proportion Breakdown" ;
+			chartData = getQuestionSummaryDataCross(key, filterKey, filterResult, id);
+			if(chartData == -1) return;
+		}
+
+
+		if(area == 'cross'){
+
+			var ctx = document.getElementById(id).getContext('2d');
+			var myChart = new Chart(ctx, {
+			    type: chartType,
+			    data: {
+			        labels: possibleAnswers[key],
+			        datasets: [{
+			            label: chartLabel,
+			            data: chartData,
+			            backgroundColor: [
+			                'rgba(245, 66, 66, 0.2)',
+			                'rgba(98, 188, 240, 0.2)',
+			                'rgba(84, 255, 87, 0.2)',
+			                'rgba(255, 247, 89, 0.2)',
+			                'rgba(255, 175, 64, 0.2)',
+			                'rgba(172, 64, 255, 0.2)',
+			                'rgba(28, 52, 189, 0.2)',
+			                'rgba(205, 255, 87, 0.2)',
+			                'rgba(133, 255, 198, 0.2)'
+			            ],
+			            borderColor: [
+			                'rgba(245, 66, 66, 1)',
+			                'rgba(98, 188, 240, 1)',
+			                'rgba(84, 255, 87, 1)',
+			                'rgba(255, 247, 89, 1)',
+			                'rgba(255, 175, 64, 1)',
+			                'rgba(172, 64, 255, 1)',
+			                'rgba(28, 52, 189, 0.2)',
+			                'rgba(205, 255, 87, 0.2)',
+			                'rgba(133, 255, 198, 0.2)'
+			            ],
+			            borderWidth: 1
+			        }]
+			    },
+			    options: {
+			       title: {
+			        display: false,
+			        text: 'Point Allocation Breakdown'
+			      }
+			    }
+			});
+			$('#cross-chart' + key).fadeIn();
 		}
 	}
 
@@ -757,7 +838,7 @@
 			for(var response in responses){
 				if(responses[response][translateQuestionToResonse(parseInt(key))] != 'not asked' && key != 35){
 					//get index to add to
-					let index = getIndexOfAnswer(responses[response][translateQuestionToResonse(parseInt(key))], key, response);``
+					let index = getIndexOfAnswer(responses[response][translateQuestionToResonse(parseInt(key))], key, response);
 
 
 					responseTotals[index] = responseTotals[index] + 1;
@@ -818,6 +899,112 @@
 
 	}
 
+
+	// cross analysis... get array respresenting proportional breakdown of responses for given question
+	//
+	function getQuestionSummaryDataCross(key, filterKey, filterResult, id){
+
+		let updateFlag = false;
+
+		if(isSingleSelectQuestion(key)){
+
+			let responseTotals = newZeroArr(possibleAnswers[key].length);
+
+			for(var response in responses){
+				if(responses[response][translateQuestionToResonse(parseInt(key))] != 'not asked' && key != 35){
+
+					if(responses[response][translateQuestionToResonse(filterKey)].trim() == possibleAnswers[filterKey][filterResult].trim()){
+						let index = getIndexOfAnswer(responses[response][translateQuestionToResonse(parseInt(key))], key, response);
+						responseTotals[index] = responseTotals[index] + 1;
+						updateFlag = true;
+					}
+				}
+			}
+
+			if(updateFlag){
+				$('#'+id+'Txt').fadeIn();
+				$('#'+id).fadeIn();
+			}else {
+				return -1;
+			}
+
+			return responseTotals;
+		}
+
+		else if(isMultiSelectQuestion(key)){
+
+			let responseTotals = newZeroArr(possibleAnswers[key].length);
+
+
+			for(var response in responses){
+				if(responses[response][translateQuestionToResonse(parseInt(key))] != 'not asked'){
+					//get index to add to
+					let responsesArr = responses[response][translateQuestionToResonse(parseInt(key))].split(',');
+					for(var selection in responsesArr){
+						// respondant reported filterResult for question # filterkey?
+						if(responses[response][translateQuestionToResonse(parseInt(filterKey))].toLowerCase().trim() == possibleAnswers[filterkey][filterResult].toLowerCase.trim()){
+							let index = getIndexOfAnswer(responses[response][translateQuestionToResonse(parseInt(key))], key, response);
+							responseTotals[index] = responseTotals[index] + 1;
+							updateFlag = true;
+						}
+					}
+				}
+
+			}
+
+			if(updateFlag){
+				$('#'+id+'Txt').fadeIn();
+				$('#'+id).fadeIn();
+			}else {
+				return -1;
+			}
+
+			return responseTotals;
+		}
+
+		else if(isPointAllocation(key)){
+
+			let responseTotals = newZeroArr(possibleAnswers[key].length);
+			let totalPoints = 0;
+
+			for(var response in responses){
+
+				if(responses[response][translateQuestionToResonse(parseInt(key))] != 'not asked'){
+					// respondant reported filterResult for question # filterkey?
+					if(responses[response][translateQuestionToResonse(parseInt(filterKey))].toLowerCase().trim() == possibleAnswers[filterkey][filterResult].toLowerCase.trim()){
+						//get index to add to
+						let responsesArr = responses[response][translateQuestionToResonse(parseInt(key))].split(',');
+						for(var selection in responsesArr){
+							if(responsesArr[selection] > 0){
+								responseTotals[selection] = parseInt(responseTotals[selection]) + parseInt(responsesArr[selection]);
+								totalPoints += parseInt(responsesArr[selection]);
+								updateFlag = true;
+							}
+						}
+					}
+
+				}
+			}
+
+
+			//divide all by total points and multiply by 100
+			for(var total in responseTotals){
+				responseTotals[total] = ((responseTotals[total]/totalPoints)*100).toPrecision(2);
+			}
+
+
+			if(updateFlag){
+				$('#'+id+'Txt').fadeIn();
+				$('#'+id).fadeIn();
+			}else {
+				return -1;
+			}
+
+			return responseTotals;
+		}
+
+	}
+
 	//return array of zeros of specified length
 	function newZeroArr(len){
 		let arr = [];
@@ -842,7 +1029,6 @@
 			i++;
 
 		}
-		//console.log('not found', answer, possibleAnswers[key], key)
 		return -1;
 	}
 
@@ -1046,7 +1232,6 @@
 
 	//transalte question index to response index
 	function translateQuestionToResonse(key){
-		//.............................
 		if(key <= 14) return key - 1;
 		else if(key == 14.5) return 14;
 		else if(key == 15) return 15;
@@ -1242,7 +1427,19 @@
 		];
 
 		responses[9] = [
-			"Global (Asia focus)	", " China	", " Information Vendor	", " Data consumer / processor	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Analytics	", " Product Manager	", " Questel (Fampat/ Data Scope),LexisNexis / IPDD,IFI Claims  (Claims Direct),Google Patents	", " not asked	", " 100,,,,	", " not asked	", " 80,10,10,,,,	", " not asked	", " 40,,,,,60,,,	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Analytics	", " not asked	", " no	", " not asked	", " ,,90,,,10,,,	", " not asked	", " no	", " Clarivate (Derwent /DWPI),Questel (Fampat/ Data Scope),LexisNexis / IPDD	", " Completeness	", " Freedom to operate,Technology Landscaping,Competitive Landscaping	", " yes	", " Private Corp Data	", " Legal Status Clean Up,Expiry date calculation,Connector to non patent litreature	", " yes	", " past	", " View competitor status	", " not asked	", " not asked	", " not asked	", " not asked	"
+			"Global (Asia focus)	", " China	", "Law firm", " Data consumer / processor	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Analytics	", " Product Manager	", " Questel (Fampat/ Data Scope),LexisNexis / IPDD,IFI Claims  (Claims Direct),Google Patents	", " not asked	", " 100,,,,	", " not asked	", " 80,10,10,,,,	", " not asked	", " 40,,,,,60,,,	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Analytics	", " not asked	", " no	", " not asked	", " ,,90,,,10,,,	", " not asked	", " no	", " Clarivate (Derwent /DWPI),Questel (Fampat/ Data Scope),LexisNexis / IPDD	", " Completeness	", " Freedom to operate,Technology Landscaping,Competitive Landscaping	", " yes	", " Private Corp Data	", " Legal Status Clean Up,Expiry date calculation,Connector to non patent litreature	", " yes	", " past	", " View competitor status	", " not asked	", " not asked	", " not asked	", " not asked	"
+		];
+
+		responses[10] = [
+			"United States", " United States", "Law firm", " Decision maker but not user", " not asked	", " not asked	", " not asked	", "Legal", "Both", " not asked	", " not asked	", " Analytics	", " Manager	", " Questel (Fampat/ Data Scope),LexisNexis / IPDD,IFI Claims  (Claims Direct),Google Patents	", " not asked	", " 100,,,,	", " not asked	", " 80,10,10,,,,	", " not asked	", " 40,,,,,60,,,	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Analytics	", " not asked	", " no	", " not asked	", " ,,90,,,10,,,	", " not asked	", " no	", "Questel (Fampat/ Data Scope),LexisNexis / IPDD	", " Completeness	", " Freedom to operate,Technology Landscaping,Competitive Landscaping	", " yes	", " Private Corp Data	", " Legal Status Clean Up,Expiry date calculation,Connector to non patent litreature	", " yes	", " past	", " View competitor status	", " not asked	", " not asked	", " not asked	", " not asked	"
+		];
+
+		responses[11] = [
+			"United States", " United States", "Corporation", "not asked", "IT", "Both", " Purchase	", "not asked", " not asked", " not asked	", " not asked	", " Analytics	", " Purchase	", " Questel (Fampat/ Data Scope),LexisNexis / IPDD,Google Patents	", " not asked	", " 100,,,,	", " not asked	", " 80,10,10,,,,	", " not asked	", " 40,,,,,60,,,	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Analytics	", " not asked	", " no	", " not asked	", " ,,90,,,10,,,	", " not asked	", " no	", "Questel (Fampat/ Data Scope),LexisNexis / IPDD	", " Completeness	", " Freedom to operate,Technology Landscaping,Competitive Landscaping	", " yes	", " Private Corp Data	", " Legal Status Clean Up,Expiry date calculation,Connector to non patent litreature	", " yes	", " past	", " View competitor status	", " not asked	", " not asked	", " not asked	", " not asked	"
+		];
+
+		responses[12] = [
+			"United States", "Japan", "Corporation", "not asked", "Food", "Both", " R&D	", "not asked", " not asked", " not asked	", " not asked	", " Analytics	", " Manager	", " Questel (Fampat/ Data Scope),LexisNexis / IPDD,Google Patents	", " not asked	", " 100,,,,	", " not asked	", " 80,10,10,,,,	", " not asked	", " 40,,,,,60,,,	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Analytics	", " not asked	", " no	", " not asked	", " ,,90,,,10,,,	", " not asked	", " no	", "Questel (Fampat/ Data Scope),LexisNexis / IPDD	", " Completeness	", " Freedom to operate,Technology Landscaping,Competitive Landscaping	", " yes	", " Private Corp Data	", " Legal Status Clean Up,Expiry date calculation,Connector to non patent litreature	", " yes	", " past	", " View competitor status	", " not asked	", " not asked	", " not asked	", " not asked	"
 		];
 
 	}
@@ -1261,9 +1458,15 @@
 		"Karlyn Dickison",  
 		"Sheri Westfall",  
 		"Gisela Pressey",  
-		"Candy Fino",  
-		"Rayna Parsley",  
+		"Rayna Parsley",
 		"Shawnee Haworth",  
+		"Lachelle Kump",  
+		"Candy Fino" 
+		]
+
+		/* More names if needed
+
+
 		"Lachelle Kump",  
 		"Lizabeth Sarris",  
 		"Phil Viverette",  
@@ -1302,7 +1505,7 @@
 		"Lida Trentham",  
 		"Jean Tyndall",  
 		"Bo Merz"  
-		]
+		*/
 
 
 	}
