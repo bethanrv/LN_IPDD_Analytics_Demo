@@ -444,15 +444,15 @@
 			            label: "Points Allocated",
 			            data: responseArr.split(','),
 			            backgroundColor: [
-			                'rgba(245, 66, 66, 0.2)',
-			                'rgba(98, 188, 240, 0.2)',
-			                'rgba(84, 255, 87, 0.2)',
-			                'rgba(255, 247, 89, 0.2)',
-			                'rgba(255, 175, 64, 0.2)',
-			                'rgba(172, 64, 255, 0.2)',
-			                'rgba(28, 52, 189, 0.2)',
-			                'rgba(205, 255, 87, 0.2)',
-			                'rgba(133, 255, 198, 0.2)'
+										'rgba(245, 66, 66, 0.7)',
+										'rgba(98, 188, 240, 0.7)',
+										'rgba(84, 255, 87, 0.7)',
+										'rgba(255, 247, 89, 0.7)',
+										'rgba(255, 175, 64, 0.7)',
+										'rgba(28, 52, 189, 0.7)',
+										'rgba(172, 64, 255, 0.7)',
+										'rgba(205, 255, 87, 0.7)',
+										'rgba(133, 255, 198, 0.7)'
 			            ],
 			            borderColor: [
 			                'rgba(245, 66, 66, 1)',
@@ -509,15 +509,15 @@
 			            label: chartLabel,
 			            data: chartData,
 			            backgroundColor: [
-			                'rgba(245, 66, 66, 0.2)',
-			                'rgba(98, 188, 240, 0.2)',
-			                'rgba(84, 255, 87, 0.2)',
-			                'rgba(255, 247, 89, 0.2)',
-			                'rgba(255, 175, 64, 0.2)',
-			                'rgba(172, 64, 255, 0.2)',
-			                'rgba(28, 52, 189, 0.2)',
-			                'rgba(205, 255, 87, 0.2)',
-			                'rgba(133, 255, 198, 0.2)'
+										'rgba(245, 66, 66, 0.7)',
+										'rgba(98, 188, 240, 0.7)',
+										'rgba(84, 255, 87, 0.7)',
+										'rgba(255, 247, 89, 0.7)',
+										'rgba(255, 175, 64, 0.7)',
+										'rgba(28, 52, 189, 0.7)',
+										'rgba(172, 64, 255, 0.7)',
+										'rgba(205, 255, 87, 0.7)',
+										'rgba(133, 255, 198, 0.7)'
 			            ],
 			            borderColor: [
 			                'rgba(245, 66, 66, 1)',
@@ -578,15 +578,15 @@
 			            label: chartLabel,
 			            data: chartData,
 			            backgroundColor: [
-			                'rgba(245, 66, 66, 0.2)',
-			                'rgba(98, 188, 240, 0.2)',
-			                'rgba(84, 255, 87, 0.2)',
-			                'rgba(255, 247, 89, 0.2)',
-			                'rgba(255, 175, 64, 0.2)',
-			                'rgba(172, 64, 255, 0.2)',
-			                'rgba(28, 52, 189, 0.2)',
-			                'rgba(205, 255, 87, 0.2)',
-			                'rgba(133, 255, 198, 0.2)'
+										'rgba(245, 66, 66, 0.7)',
+										'rgba(98, 188, 240, 0.7)',
+										'rgba(84, 255, 87, 0.7)',
+										'rgba(255, 247, 89, 0.7)',
+										'rgba(255, 175, 64, 0.7)',
+										'rgba(28, 52, 189, 0.7)',
+										'rgba(172, 64, 255, 0.7)',
+										'rgba(205, 255, 87, 0.7)',
+										'rgba(133, 255, 198, 0.7)'
 			            ],
 			            borderColor: [
 			                'rgba(245, 66, 66, 1)',
@@ -1072,7 +1072,7 @@
 		questions[29] = 'Do you combine patent data with any other data (e.g. litigation, news, business etc.)? If yes, which data?';
 		questions[29.5] = 'Specify what other data you combine it with';
 		questions[30] = 'Do you further process the patent data before using in your solution? Please select all that you do.';
-		questions[31] = 'Do you use LexisNexis IPDD today?';
+		questions[31] = 'Did you use LexisNexis IPDD today?';
 		questions[32] = 'How  familiar are you with IPDD?';
 		questions[33] = 'Why did  you purchase LexisNexis IPDD originally?';
 		questions[34] = 'Why did you stop using LexisNexis IPDD?';
@@ -1190,7 +1190,7 @@
 			"Clarivate (Derwent /DWPI)	", " Questel (Fampat/ Data Scope)	", " LexisNexis / IPDD	", " IFI Claims  (Claims Direct)	", " Lighthouse IP	", " Google Patents	", " European Patent Office (espacenet)	", " USPTO	", " Others	"
 		]
 		possibleAnswers[27] = [
-			"Completeness of data (e.g. maximum number of patent offices)	", " Accuracy of data (i.e. different offices have different quality of data)	", " Cost (i.e. different providers have different costs )	", " I do my own data cleansing	", " Other	"
+			"Completeness", " Accuracy", " Cost", " I do my own data cleansing	", " Other	"
 		]
 		possibleAnswers[28] = [
 			"Prior art search	", " Freedom to Operate	", " Invalidity search	", " Technology Landscaping	", " Competitive Landscaping	", " Innovation scouting	", " Partner identification	", " Competitive analysis	", " white space identification	", " M&A / Licensing identification	", " Innovation scouting	", " Prosecution analytics	", " Other 	"
@@ -1442,6 +1442,54 @@
 			"United States", "Japan", "Corporation", "not asked", "Food", "Both", " R&D	", "not asked", " not asked", " not asked	", " not asked	", " Analytics	", " Manager	", " Questel (Fampat/ Data Scope),LexisNexis / IPDD,Google Patents	", " not asked	", " 100,,,,	", " not asked	", " 80,10,10,,,,	", " not asked	", " 40,,,,,60,,,	", " not asked	", " not asked	", " not asked	", " not asked	", " not asked	", " Analytics	", " not asked	", " no	", " not asked	", " ,,90,,,10,,,	", " not asked	", " no	", "Questel (Fampat/ Data Scope),LexisNexis / IPDD	", " Completeness	", " Freedom to operate,Technology Landscaping,Competitive Landscaping	", " yes	", " Private Corp Data	", " Legal Status Clean Up,Expiry date calculation,Connector to non patent litreature	", " yes	", " past	", " View competitor status	", " not asked	", " not asked	", " not asked	", " not asked	"
 		];
 
+		responses[13] = [
+			"China",
+			"China",
+			"Government / Academic",
+			"Data Consumer",
+			"Search",
+			"Software Development",
+			"not asked",
+			"Patent Specialist",
+			"not asked",
+			"not asked",
+			"not asked",
+			"Both",
+			"R&D",
+			"LexisNexis / IPDD,European Patent Office (espacenet),USPTO",
+			"not asked",
+			"40,20,20,20,",
+			"not asked",
+			"20,20,,,50,10,",
+			"not asked",
+			"20,,,30,,20,,30,",
+			"20,,,40,,10,,30",
+			"30,,,,30,,,,40,",
+			"not asked",
+			"30,,,,40,30,,",
+			"not asked",
+			"Search,Analytics,Solutions",
+			"Prior art search,Competitive Intelligence,Patent Scouting",
+			"yes",
+			"Litigation Data",
+			"10,10,50,,10,,15,5,",
+			"yes",
+			"We currently use this product",
+			"not asked",
+			"not asked",
+			"not asked",
+			"not asked",
+			"10,,10,20,,60",
+			"Legal Status Clean Up,Ownership data refinement,Add news and business data",
+			"yes",
+			"current",
+			"Legal data",
+			"not asked",
+			"not asked",
+			"not asked",
+			"10,,10,20,,60"
+		];
+
 	}
 
 
@@ -1461,14 +1509,15 @@
 		"Rayna Parsley",
 		"Shawnee Haworth",  
 		"Lachelle Kump",  
+		"Lizabeth Sarris",  
 		"Candy Fino" 
 		]
 
 		/* More names if needed
 
 
-		"Lachelle Kump",  
-		"Lizabeth Sarris",  
+
+
 		"Phil Viverette",  
 		"Deneen Hartzog",  
 		"Terrell Flom",  
